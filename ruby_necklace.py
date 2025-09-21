@@ -5,6 +5,7 @@ import time
 from pynput import mouse, keyboard
 import sys
 import json
+import random
 
 class RubyMaker:
     def __init__(self):
@@ -68,13 +69,13 @@ class RubyMaker:
         default_wait = .5
         if key == keyboard.Key.space:
             with mss.mss() as sct:
-                for _ in range(8):
+                while True:
                     print("moving to furnace tile")
                     self.go_to_color(sct, self.furnace_tile_color_lower, self.furnace_tile_color_upper)
                     time.sleep(10)
                     print("interacting with furnace")
                     self.go_to_color(sct, self.furnace_color_lower, self.furnace_color_upper)
-                    time.sleep(default_wait)
+                    self.wait(default_wait)
                     print("pressing space...")
                     self.keyboard.press(keyboard.Key.space)
                     time.sleep(25)
@@ -83,16 +84,27 @@ class RubyMaker:
                     time.sleep(10)
                     print("opening bank...")
                     self.go_to_color(sct, self.open_bank_color_lower, self.open_bank_color_upper)
-                    time.sleep(default_wait)
+                    self.wait(default_wait)
                     print("depositing...")
                     self.go_to_color(sct, self.inv_slot_color_lower, self.inv_slot_color_upper)
-                    time.sleep(default_wait)
+                    self.wait(default_wait)
                     print("grabbing gold and rubies...")
-                    self.go_to_image(sct, self.gold_template)
-                    time.sleep(default_wait)
-                    self.go_to_image(sct, self.ruby_template)
+                    img = self.go_to_image(sct, self.gold_template)
+                    if not img:
+                        return False
+                    self.wait(default_wait)
+                    img = self.go_to_image(sct, self.ruby_template)
+                    if not img:
+                        return False
+                    
+                    # randomly wait for three minutes for realness
+                    if random.randint(1, 10) == 10:
+                        print("sleeping for three minutes...")
+                        time.sleep(180)  
                 return False
 
+    def wait(self, default_wait):
+        time.sleep(default_wait + random.random())
 
     def go_to_image(self, sct, image, threshold=.8):
         monitor = sct.monitors[0]
@@ -111,7 +123,10 @@ class RubyMaker:
             self.move_mouse((center_x, center_y))
             time.sleep(.3)
             self.left_click()
-            time.sleep(.3)            
+            time.sleep(.3)
+            return True
+        else:
+            return False # no good match
 
     def go_to_color(self, sct, color_lower, color_upper):
         monitor = sct.monitors[0]
@@ -168,42 +183,4 @@ running back to bank -- 5.24
 
 bank color -- 255, 0, 255
 furnace color -- 255, 0, 0
-
-                self.move_mouse(self.locations['go to furnace'])
-                self.left_click()
-                time.sleep(10)
-                self.move_mouse(self.locations['open furnace'])
-                time.sleep(default_wait)
-                self.left_click()
-                time.sleep(3)
-                self.move_mouse(self.locations['make necklace'])
-                self.left_click()
-                time.sleep(25)
-                self.move_mouse(self.locations['toggle sprint'])
-                time.sleep(default_wait)
-                self.left_click()
-                time.sleep(default_wait)
-                self.move_mouse(self.locations['go to bank'])
-                time.sleep(default_wait)
-                self.left_click()
-                time.sleep(6)
-                self.move_mouse(self.locations['open bank'])
-                time.sleep(default_wait)
-                self.left_click()
-                time.sleep(default_wait)
-                self.move_mouse(self.locations['deposit'])
-                self.left_click()
-                time.sleep(default_wait)
-                self.move_mouse(self.locations['withdraw ruby'])
-                self.left_click()
-                time.sleep(default_wait)
-                self.move_mouse(self.locations['withdraw gold'])
-                self.left_click()
-                self.move_mouse(self.locations['close'])
-                self.left_click()
-                time.sleep(default_wait)
-                self.move_mouse(self.locations['toggle sprint'])
-                self.left_click()
-
-
 """
