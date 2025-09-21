@@ -48,13 +48,20 @@ class HighAlch:
             with mss.mss() as sct:
                 for item in range(len(self.item_locs)):
                     for iter in range(self.stack_sizes[item]):
-                        self.go_to_image(sct, self.high_alch_template)
+                        # block until we see the high alch icon
+                        img = self.go_to_image(sct, self.high_alch_template)
+                        while not img:
+                            img = self.go_to_image(sct, self.high_alch_template)
                         print(f"moving mouse to {self.item_locs[item]}")
                         self.move_mouse(self.item_locs[item])
                         self.wait(default_wait)
                         self.left_click()
                         self.move_mouse(self.magic_tab_loc)
-                        time.sleep(3)
+                        # randomly wait for three minutes for realness
+                        if random.randint(1, 100) == 50:
+                            print("sleeping for three minutes...")
+                            time.sleep(180) 
+
             return False
         return True
 
