@@ -20,6 +20,8 @@ class HighAlch:
         self.high_alch_template = cv2.imread("high_alch.png", cv2.IMREAD_UNCHANGED)
         self.high_alch_template = cv2.cvtColor(self.high_alch_template, cv2.COLOR_BGRA2BGR)
 
+        self.high_alch_loc = (0, 0, 0, 0)
+
     def left_click(self):
         self.mouse_ctrl.click(mouse.Button.left, 1)
 
@@ -66,9 +68,19 @@ class HighAlch:
         return True
 
     def go_to_image(self, sct, image, threshold=.8):
-        monitor = sct.monitors[0]
-        screenshot = np.array(sct.grab(monitor))
+        if self.high_alch_loc == (0, 0, 0, 0):
+            monitor = sct.monitors[0]
+            screenshot = np.array(sct.grab(monitor))
+        else:
+            region = {
+                "left": self.high_alch_loc[0], 
+                "top": self.high_alch_loc[1], 
+                "height": self.high_alch_loc[2] + 50, 
+                "width": self.high_alch_loc[3] + 50
+                }
+            screenshot = np.array(sct.grab(region))
         screenshot_gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+
         template_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         result = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
@@ -78,11 +90,18 @@ class HighAlch:
             t_height, t_width = template_gray.shape[:2]
             center_x = max_loc[0] + t_width // 2
             center_y = max_loc[1] + t_height // 2
+            if self.high_alch_loc == (0, 0, 0, 0):
+                self.high_alch_loc = (max_loc[0], max_loc[1], t_height, t_width)
+            else:
+                # convert to global screenspace
+                center_x += self.high_alch_loc[0]
+                center_y += self.high_alch_loc[1]
             print(f"moving to {center_x}, {center_y} and clicking")
             self.move_mouse((center_x, center_y))
             self.wait()
             self.left_click()
             self.wait
+            
             return True
         else:
             return False # no good match
