@@ -131,7 +131,6 @@ class HighAlch:
            
             return True
         else:
-            print(f"No good match. max_val: {max_val}")
             return False # no good match
         
     def log_out(self):
