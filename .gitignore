@@ -1,1 +1,53 @@
 .venv
+
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package files
+*.jar
+*.war
+*.ear
+
+# Virtual machine crash logs
+hs_err_pid*
+
+# Build directories
+/bin/
+/build/
+/out/
+/target/
+
+# IDE-specific files
+# Eclipse
+.project
+.classpath
+.settings/
+
+# IntelliJ IDEA
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# VS Code
+.vscode/
+
+# MacOS / Windows noise
+.DS_Store
+Thumbs.db
