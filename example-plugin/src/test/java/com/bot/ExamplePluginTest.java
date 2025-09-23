@@ -1,4 +1,4 @@
-package com.example;
+package com.bot;
 
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
