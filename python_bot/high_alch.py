@@ -65,10 +65,10 @@ class HighAlch:
                         self.wait(default_wait)
                         self.left_click()
                         self.move_mouse(self.magic_tab_loc)
-                        # randomly wait for three minutes for realness
-                        if random.randint(1, 100) == 50:
-                            print("sleeping for three minutes...")
-                            time.sleep(180) 
+                        # # randomly wait for three minutes for realness
+                        # if random.randint(1, 100) == 50:
+                        #     print("sleeping for three minutes...")
+                        #     time.sleep(180) 
 
             return False
         return True

@@ -3,8 +3,8 @@ import numpy as np
 import mss
 import time
 from pynput import mouse, keyboard
-import sys
 import json
+import random
 
 
 class BananaMagic:
@@ -72,6 +72,9 @@ class BananaMagic:
             print(f"found at {max_loc} (top_left)")
             return True
         return False
+    
+    def wait(self, default_wait):
+        time.sleep(default_wait + random.random())
         
     def run_automation(self, key):
         if not self.running:
@@ -86,9 +89,9 @@ class BananaMagic:
                                 return False
                             print(f"executing step: {step}")
                             self.move_mouse(self.locations[step])
-                            time.sleep(.3)
+                            self.wait(1)
                             self.left_click()
-                            time.sleep(.5)
+                            self.wait(1)
             print("Done running automation.")
 
     def load_from_config(self):
