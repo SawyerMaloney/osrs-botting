@@ -20,6 +20,9 @@ class Bot:
         self.log_out_button_template = cv2.imread("log_out_button.png", cv2.IMREAD_UNCHANGED)
         self.log_out_button_template = cv2.cvtColor(self.log_out_button_template, cv2.COLOR_BGRA2BGR)
 
+        self.inventory_template = cv2.imread("inventory.png", cv2.IMREAD_UNCHANGED)
+        self.inventory_template = cv2.cvtColor(self.inventory_template, cv2.COLOR_BGRA2BGR)
+
         self.cached_region = None
         self.debug_counter = 0
 
@@ -113,3 +116,15 @@ class Bot:
                 img = self.go_to_image(sct, self.log_out_button_template, False, threshold=.5, debug=True)  # bye bye!
             print("Log out pressed.")
             return True
+        
+    def open_magic_tab(self):
+        self.keyboard.press(keyboard.Key.f6)
+        self.keyboard.release(keyboard.Key.f6)
+        
+    def open_inventory_tab(self):
+        with mss.mss() as sct:
+            self.go_to_image(sct, self.inventory_template, False, threshold=.5, debug=True)
+
+    def reset_mouse(self):
+        self.move_mouse((0, 0))
+        self.cached_region = None
