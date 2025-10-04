@@ -7,11 +7,24 @@ import sys
 import json
 import random
 from datetime import datetime
+import os
 
 class Bot:
     def __init__(self):
         self.mouse_ctrl = mouse.Controller()
         self.keyboard = keyboard.Controller()
+
+        self.log_out_template = cv2.imread("log_out.png", cv2.IMREAD_UNCHANGED)
+        self.log_out_template = cv2.cvtColor(self.log_out_template, cv2.COLOR_BGRA2BGR)
+
+        self.log_out_button_template = cv2.imread("log_out_button.png", cv2.IMREAD_UNCHANGED)
+        self.log_out_button_template = cv2.cvtColor(self.log_out_button_template, cv2.COLOR_BGRA2BGR)
+
+        self.cached_region = None
+        self.debug_counter = 0
+
+        self.debug_folder = "debug"
+        os.makedirs(self.debug_folder, exist_ok=True)
 
     def left_click(self):
         self.mouse_ctrl.click(mouse.Button.left, 1)
@@ -52,7 +65,9 @@ class Bot:
             cv2.rectangle(screenshot_vis, top_left, bottom_right, (0, 0, 255), 2)
 
             # Show the image
-            cv2.imshow("Template Match", screenshot_vis)
+            filename = os.path.join(self.debug_folder, f"debug_{self.debug_counter}.png")
+            self.debug_counter += 1
+            cv2.imwrite(filename, screenshot_vis)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
 
@@ -78,19 +93,23 @@ class Bot:
             self.left_click()
             self.wait
            
+            if debug:
+                print(f"good match, max val {max_val} with threshold {threshold}")
             return True
         else:
+            if debug:
+                print(f"no good match, max val {max_val} with threshold {threshold}")
             return False # no good match
         
     def log_out(self):
         with mss.mss() as sct:
-            print("Going to logout screen...")
-            self.go_to_image(sct, self.log_out_template, False)
+            print("Going to logout screen and clicking...")
+            self.go_to_image(sct, self.log_out_template, False, debug=True, threshold=.2)
+            print("waiting...")
             self.wait()
-            self.left_click()
-            print("Pressing log out...")
-            img = self.go_to_image(sct, self.log_out_button_template, False, threshold=.5)  # bye bye!
+            print("Finding log out button and clicking...")
+            img = self.go_to_image(sct, self.log_out_button_template, False, threshold=.5, debug=True)  # bye bye!
             while not img:
-                img = self.go_to_image(sct, self.log_out_button_template, False, threshold=.5)  # bye bye!
+                img = self.go_to_image(sct, self.log_out_button_template, False, threshold=.5, debug=True)  # bye bye!
             print("Log out pressed.")
             return True
