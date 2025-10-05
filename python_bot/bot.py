@@ -28,7 +28,7 @@ class Bot:
         self.inv_bottom_right_loc = None
 
         # array of positions for each item. 24 items total, 4 W x 7 H 
-        self.inv_positions = [[0, 0, 0, 0]] * 7 
+        self.inv_positions = [[None for _ in range(4)] for _ in range(7)]
 
         self.cached_region = None
         self.debug_counter = 0
@@ -51,13 +51,12 @@ class Bot:
         self.inv_offset_x = self.inv_width / 8
         self.inv_offset_y = self.inv_height / 14
 
-        print(f"offset y: {self.inv_offset_y}, inv height: {self.inv_height}")
-        print(len(self.inv_positions))
-        print(len(self.inv_positions[0]))
+        print(f"inv_top_left[1]: {self.inv_top_left_loc[1]}, offset_y: {self.inv_offset_y}, inv_height: {self.inv_height}")
+
         for h in range(len(self.inv_positions)):
             for w in range(len(self.inv_positions[0])):
+                print(f"setting h,w: {h}, {w}")
                 item_pos = (self.inv_offset_x + w * self.inv_width / 4 + self.inv_top_left_loc[0], self.inv_offset_y + h * self.inv_height / 7 + self.inv_top_left_loc[1])
-                print(f"h: {h}, w: {w}, item_pos: {item_pos}")
                 self.inv_positions[h][w] = item_pos
 
         print(f"Finished calculating item positions: \n{self.inv_positions}")
@@ -219,3 +218,17 @@ class Bot:
     def reset_mouse(self):
         self.move_mouse((0, 0))
         self.cached_region = None
+
+    def use_item(self, w, h):
+        print(f"using item {h}, {w}")
+        print(f"h: {self.inv_positions[7-h-1][w][0]}, w: {self.inv_positions[7-h-1][w][1]}")
+        self.move_mouse(self.inv_positions[h][w])
+        self.wait()
+        self.left_click()
+        self.wait()
+
+    def check_inv_slot(self, w, h):
+        item_loc = self.inv_positions[h][w]
+        # find size of item 
+        item_size = (self.inv_width / 4, self.inv_height / 7)
+        

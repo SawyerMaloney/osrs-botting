@@ -13,20 +13,11 @@ class Test(Bot):
 
     def on_press(self, key):
          if key == keyboard.Key.space:
-            print("running, opening magic tab...")
-            self.open_magic_tab()
-            print("waiting 2 seconds...")
+            print("using item 1,0")
+            self.use_item(3, 0)
             self.wait(2)
-            print("opening inventory tab...")
-            self.open_inventory_tab()
-            print("waiting 2 seconds...")
-            self.wait(2)
-            print("resetting mouse...")
-            self.reset_mouse()
-            self.wait(2)
-            print("Logging out...")
-            self.log_out()
+            self.use_item(0, 1)
             return False
-
+    
 bot = Test()
 bot.bot()
