@@ -18,32 +18,28 @@ class HighAlch(Bot):
 
     def on_press(self, key):
         if key == keyboard.Key.space:
-            if self.count == len(self.stack_sizes):
-                pos = self.mouse_ctrl.position
-                self.magic_tab_loc = pos
-                print(f"adding magic tab loc as {pos}")
-                return False
             self.item_locs.append(self.mouse_ctrl.position)
             print(f"adding {self.mouse_ctrl.position} for item {self.count}")
             self.count += 1
+            if self.count == len(self.stack_sizes):
+                return False
             
         return True
 
     def bot(self, key):
         default_wait = .5
         if key == keyboard.Key.space:
+            self.open_magic_tab()
             with mss.mss() as sct:
                 for item in range(len(self.item_locs)):
                     for iter in range(self.stack_sizes[item]):
                         # block until we see the high alch icon
-                        img = self.go_to_image(sct, self.high_alch_template, True)
-                        while not img:
-                            img = self.go_to_image(sct, self.high_alch_template, True)
+                        self.block_on_go_to_image(sct, self.high_alch_template, True, debug=True)
                         print(f"moving mouse to {self.item_locs[item]}")
                         self.move_mouse(self.item_locs[item])
                         self.wait(default_wait)
                         self.left_click()
-                        self.move_mouse(self.magic_tab_loc)
+                        self.reset_mouse()
                         # # randomly wait for three minutes for realness
                         # if random.randint(1, 100) == 50:
                         #     print("sleeping for three minutes...")
@@ -69,8 +65,9 @@ class HighAlch(Bot):
             listener.join()
 
         print(f"High alching finished at {datetime.fromtimestamp(time.time())}.")
+        self.wait(2)
 
-        self.log_out()
+        # self.log_out()
 
 if __name__ == "__main__":
     bot = HighAlch()

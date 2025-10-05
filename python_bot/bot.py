@@ -67,14 +67,11 @@ class Bot:
 
                 if setup_complete:
                     print("Setup complete.")
+                    self.open_inventory_tab()
                     return False  # opposite, because this will stop the listener
                 else:
                     print("Setup did not complete. Please press space again when your screen is clear.")
                     return True
-
-
-        else:
-            print("Bot setup has not completed yet. Please clear your window and press space when you are ready.")
 
 
     def template_path(self, template_name):
