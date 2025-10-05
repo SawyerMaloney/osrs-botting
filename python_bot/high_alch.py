@@ -10,7 +10,7 @@ class HighAlch(Bot):
         super().__init__()  # Initialize the parent Bot class
 
         self.count = 0
-        self.item_locs = []
+        self.item_loc = (2, 0)
         self.magic_tab_loc = (0, 0)
 
         self.high_alch_template = cv2.imread(self.template_path("high_alch.png"), cv2.IMREAD_UNCHANGED)
@@ -31,43 +31,32 @@ class HighAlch(Bot):
         if key == keyboard.Key.space:
             self.open_magic_tab()
             with mss.mss() as sct:
-                for item in range(len(self.item_locs)):
-                    for iter in range(self.stack_sizes[item]):
+                for item in range(len(self.item_loc)):
+                    while True:
                         # block until we see the high alch icon
                         self.block_on_go_to_image(sct, self.high_alch_template, True, debug=True)
-                        print(f"moving mouse to {self.item_locs[item]}")
-                        self.move_mouse(self.item_locs[item])
-                        self.wait(default_wait)
-                        self.left_click()
+                        if not self.has_item(self.item_loc[0], self.item_loc[1]):
+                            if self.item_loc[1] > 3:
+                                self.item_loc = (self.item_loc[0], self.item_loc[1] + 1)
+                            else:
+                                self.item_loc = (self.item_loc[0] + 1, self.item_loc[1])
+                            if not self.has_item(self.item_loc[0], self.item_loc[1]):
+                                print("Done with high alching.")
+                                return False
+                        self.use_item(self.item_loc[0], self.item_loc[1])
+                        self.wait()                        
                         self.reset_mouse()
-                        # # randomly wait for three minutes for realness
-                        # if random.randint(1, 100) == 50:
-                        #     print("sleeping for three minutes...")
-                        #     time.sleep(180) 
 
             return False
         return True
         
     def run(self):
-        num_items = int(input("how many items: "))
-        self.stack_sizes = [0] * num_items
-        for item in range(len(self.stack_sizes)):
-            self.stack_sizes[item] = int(input(f"how many items in stack {item}: "))
-        
-        print("press space over each item")
-        with keyboard.Listener(on_press=self.on_press) as listener:
-            listener.join()
-
-        print(f"Item positions: {self.item_locs}")
-
         print("Press space to run the automation.")
         with keyboard.Listener(on_press=self.bot) as listener:
             listener.join()
 
         print(f"High alching finished at {datetime.fromtimestamp(time.time())}.")
         self.wait(2)
-
-        # self.log_out()
 
 if __name__ == "__main__":
     bot = HighAlch()

@@ -13,10 +13,11 @@ class Test(Bot):
 
     def on_press(self, key):
          if key == keyboard.Key.space:
-            print("checking inv slot 1, 0")
-            self.check_inv_slot(1, 0)
-            print("checking inv slot 1, 1")
-            self.check_inv_slot(1, 1)
+            for h in range(2):
+                 for w in range(4):
+                      print(f"checking item {w}, {h}")
+                      self.check_inv_slot(w, h)
+
             return False
     
 bot = Test()

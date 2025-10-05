@@ -57,7 +57,6 @@ class Bot:
 
         for h in range(len(self.inv_positions)):
             for w in range(len(self.inv_positions[0])):
-                print(f"setting h,w: {h}, {w}")
                 item_pos = (self.inv_offset_x + w * self.inv_width / 4 + self.inv_top_left_loc[0], self.inv_offset_y + h * self.inv_height / 7 + self.inv_top_left_loc[1])
                 self.inv_positions[h][w] = item_pos
 
@@ -229,7 +228,7 @@ class Bot:
         self.left_click()
         self.wait()
 
-    def check_inv_slot(self, w, h):
+    def has_item(self, w, h):
         item_loc = self.inv_positions[h][w]
         # find size of item 
         item_size = (self.inv_width / 4, self.inv_height / 7)
@@ -263,5 +262,7 @@ class Bot:
         # Decide threshold (tweak as needed)
         if edge_density < 0.01:
             print("🟩 Likely blank area")
+            return False
         else:
             print("🟥 Has edges or texture")
+            return True
