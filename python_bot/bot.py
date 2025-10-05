@@ -221,14 +221,14 @@ class Bot:
         self.cached_region = None
 
     def use_item(self, w, h):
-        print(f"using item {h}, {w}")
-        print(f"h: {self.inv_positions[7-h-1][w][0]}, w: {self.inv_positions[7-h-1][w][1]}")
+        print(f"using item {w}, {h}")
+        print(f"w: {self.inv_positions[h][w][1]}, h: {self.inv_positions[h][w][0]}")
         self.move_mouse(self.inv_positions[h][w])
         self.wait()
         self.left_click()
         self.wait()
 
-    def has_item(self, w, h):
+    def has_item(self, w, h, debug=False):
         item_loc = self.inv_positions[h][w]
         # find size of item 
         item_size = (self.inv_width / 4, self.inv_height / 7)
@@ -236,28 +236,41 @@ class Bot:
         item_top_left = (int(item_loc[0] - item_size[0]/2), int(item_loc[1] - item_size[0]/2))
         item_bottom_right = (int(item_loc[0] + item_size[0] / 2), int(item_loc[1] + item_size[1] / 2))
         # now search 
-        region = {'top': item_top_left[0], 'left': item_top_left[1], 'width': int(item_size[0]), 'height': int(item_size[1])}
+        region = {'top': item_top_left[1], 'left': item_top_left[0], 'width': int(item_size[1]), 'height': int(item_size[0])}
         print(f"searching region {region}")
-        with mss.mss() as sct:
-            screen = np.array(sct.grab(sct.monitors[1]))
-        
-        # convert to grayscale for edge detection
-        gray = cv2.cvtColor(screen, cv2.COLOR_BGRA2GRAY)
+        if debug:
+            with mss.mss() as sct:
+                screen = np.array(sct.grab(sct.monitors[1]))
+            
+            # convert to grayscale for edge detection
+            gray = cv2.cvtColor(screen, cv2.COLOR_BGRA2GRAY)
 
-        # crop the item region from the grayscale image to check edges
-        item_crop = gray[item_top_left[1]:item_bottom_right[1], item_top_left[0]:item_bottom_right[0]]
-        edges = cv2.Canny(item_crop, 100, 200)
-        edge_density = np.count_nonzero(edges) / edges.size
-        print(f"Edge density: {edge_density:.4f}")
+            # crop the item region from the grayscale image to check edges
+            item_crop = gray[item_top_left[1]:item_bottom_right[1], item_top_left[0]:item_bottom_right[0]]
+            edges = cv2.Canny(item_crop, 100, 200)
+            edge_density = np.count_nonzero(edges) / edges.size
+            print(f"Edge density: {edge_density:.4f}")
+            # draw a rectangle on the full screen to show the grabbed region
+            screen_bgr = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
+            cv2.rectangle(screen_bgr, item_top_left, item_bottom_right, (0, 0, 255), 2)
 
-        # draw a rectangle on the full screen to show the grabbed region
-        screen_bgr = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
-        cv2.rectangle(screen_bgr, item_top_left, item_bottom_right, (0, 0, 255), 2)
+            # save the screenshot with highlighted item
+            cv2.imwrite(f"screenshot_with_box_{self.inv_pos_count}.png", screen_bgr)
+            print(f"Saved screenshot with bounding box as screenshot_with_box_{self.inv_pos_count}.png")
+            self.inv_pos_count += 1
+        else:
+            with mss.mss() as sct:
+                img = np.array(sct.grab(region))
 
-        # save the screenshot with highlighted item
-        cv2.imwrite(f"screenshot_with_box_{self.inv_pos_count}.png", screen_bgr)
-        print(f"Saved screenshot with bounding box as screenshot_with_box_{self.inv_pos_count}.png")
-        self.inv_pos_count += 1
+            # Convert from BGRA (used by mss) to grayscale
+            gray = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
+
+            # Run edge detection (Canny is fast and robust)
+            edges = cv2.Canny(gray, 100, 200)
+
+            # Compute how many pixels are edges
+            edge_density = np.count_nonzero(edges) / edges.size
+            print(f"Edge density: {edge_density:.4f}")
 
         # Decide threshold (tweak as needed)
         if edge_density < 0.01:

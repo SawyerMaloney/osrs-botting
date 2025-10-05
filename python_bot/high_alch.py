@@ -34,15 +34,17 @@ class HighAlch(Bot):
                 for item in range(len(self.item_loc)):
                     while True:
                         # block until we see the high alch icon
-                        self.block_on_go_to_image(sct, self.high_alch_template, True, debug=True)
-                        if not self.has_item(self.item_loc[0], self.item_loc[1]):
+                        self.block_on_go_to_image(sct, self.high_alch_template, True)
+                        self.wait()
+                        if not self.has_item(self.item_loc[0], self.item_loc[1], debug=True):
                             if self.item_loc[1] > 3:
                                 self.item_loc = (self.item_loc[0], self.item_loc[1] + 1)
                             else:
-                                self.item_loc = (self.item_loc[0] + 1, self.item_loc[1])
+                                self.item_loc = (self.item_loc[0] + 1, 0)
                             if not self.has_item(self.item_loc[0], self.item_loc[1]):
                                 print("Done with high alching.")
                                 return False
+                        print(f"in high_alch, using item_loc {self.item_loc}")
                         self.use_item(self.item_loc[0], self.item_loc[1])
                         self.wait()                        
                         self.reset_mouse()
