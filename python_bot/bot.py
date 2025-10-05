@@ -12,17 +12,23 @@ class Bot:
         self.mouse_ctrl = mouse.Controller()
         self.keyboard = keyboard.Controller()
 
-        self.log_out_template = cv2.imread(self.template_path("log_out.png"), cv2.IMREAD_UNCHANGED)
-        self.log_out_template = cv2.cvtColor(self.log_out_template, cv2.COLOR_BGRA2BGR)
+        self.log_out_template = self.load_template("log_out.png")
         self.log_out_location = None
-
-        self.log_out_button_template = cv2.imread(self.template_path("log_out_button.png"), cv2.IMREAD_UNCHANGED)
-        self.log_out_button_template = cv2.cvtColor(self.log_out_button_template, cv2.COLOR_BGRA2BGR)
+        
+        self.log_out_button_template = self.load_template("log_out_button.png")
         self.log_out_button_location = None
 
-        self.inventory_template = cv2.imread(self.template_path("inventory.png"), cv2.IMREAD_UNCHANGED)
-        self.inventory_template = cv2.cvtColor(self.inventory_template, cv2.COLOR_BGRA2BGR)
+        self.inventory_template = self.load_template("inventory.png")
         self.inventory_loc = None
+
+        self.inv_top_left_template = self.load_template("inv_top_left.png")
+        self.inv_top_left_loc = None
+
+        self.inv_bottom_right_template = self.load_template("inv_bottom_right.png")
+        self.inv_bottom_right_loc = None
+
+        # array of positions for each item. 24 items total, 4 W x 7 H 
+        self.inv_positions = [[0, 0, 0, 0]] * 7 
 
         self.cached_region = None
         self.debug_counter = 0
@@ -34,6 +40,33 @@ class Bot:
         with keyboard.Listener(on_press=self.setup_macros) as listener:
             listener.join()
 
+        self.calculate_inv_slot_pos()
+
+        self.open_inventory_tab()
+        self.reset_mouse()
+
+    def calculate_inv_slot_pos(self):
+        self.inv_width = self.inv_bottom_right_loc[0] - self.inv_top_left_loc[0]
+        self.inv_height = self.inv_bottom_right_loc[1] - self.inv_top_left_loc[1]
+        self.inv_offset_x = self.inv_width / 8
+        self.inv_offset_y = self.inv_height / 14
+
+        print(f"offset y: {self.inv_offset_y}, inv height: {self.inv_height}")
+        print(len(self.inv_positions))
+        print(len(self.inv_positions[0]))
+        for h in range(len(self.inv_positions)):
+            for w in range(len(self.inv_positions[0])):
+                item_pos = (self.inv_offset_x + w * self.inv_width / 4 + self.inv_top_left_loc[0], self.inv_offset_y + h * self.inv_height / 7 + self.inv_top_left_loc[1])
+                print(f"h: {h}, w: {w}, item_pos: {item_pos}")
+                self.inv_positions[h][w] = item_pos
+
+        print(f"Finished calculating item positions: \n{self.inv_positions}")
+
+    def load_template(self, template_name):
+        template = cv2.imread(self.template_path(template_name), cv2.IMREAD_UNCHANGED)
+        template = cv2.cvtColor(template, cv2.COLOR_BGRA2BGR)
+        return template
+
     def setup_macros(self, key):
         """
             Find and save different locations on the screen that won't change.
@@ -41,38 +74,23 @@ class Bot:
         if key == keyboard.Key.space:
             with mss.mss() as sct:
                 # inventory location
-                setup_complete = True
-                if self.inventory_loc is None:
-                    print("Finding inventory location...")
-                    status, self.inventory_loc = self.block_on_go_to_image(sct, self.inventory_template, False, click=False, move=False, debug=True)
-                    if status:
-                        print(f"successfully found inventory location at {self.inventory_loc}")
-                    else:
-                        print("Failed to find inventory location")
-                        setup_complete = False
-                if self.log_out_location is None:
-                    print("Finding logout menu location...")
-                    status, self.log_out_location = self.block_on_go_to_image(sct, self.log_out_template, False, click=True, move=True, debug=True)
-                    if status:
-                        print(f"Successfully found logout menu button at {self.log_out_location}.")
-                    else:
-                        setup_complete = False
-                if self.log_out_button_location is None:
-                    print("Finding logout button location...")
-                    status, self.log_out_button_location = self.block_on_go_to_image(sct, self.log_out_button_template, False, click=False, move=False, debug=True)
-                    if status:
-                        print(f"Successfully found logout button at {self.log_out_button_location}")
-                    else:
-                        setup_complete = False
-
-                if setup_complete:
-                    print("Setup complete.")
-                    self.open_inventory_tab()
-                    return False  # opposite, because this will stop the listener
-                else:
-                    print("Setup did not complete. Please press space again when your screen is clear.")
-                    return True
-
+                print("Finding inventory location...")
+                status, self.inventory_loc, top_left, bottom_right = self.block_on_go_to_image(sct, self.inventory_template, False, click=False, move=False, debug=True)
+                print(f"successfully found inventory location at {self.inventory_loc}")
+                print("Finding logout menu location...")
+                status, self.log_out_location, top_left, bottom_right = self.block_on_go_to_image(sct, self.log_out_template, False, click=True, move=True, debug=True)
+                print(f"Successfully found logout menu button at {self.log_out_location}.")
+                print("Finding logout button location...")
+                status, self.log_out_button_location, top_left, bottom_right = self.block_on_go_to_image(sct, self.log_out_button_template, False, click=False, move=False, debug=True)
+                print(f"Successfully found logout button at {self.log_out_button_location}")
+                # because of the return value of 'go_to_image', we have a weird assignment
+                print("Finding top left of inventory...")
+                status, center, top_left, self.inv_top_left_loc = self.block_on_go_to_image(sct, self.inv_top_left_template, False, click=False, move=False, debug=True)
+                print(f"Successfully found top left of inventory at {self.inv_top_left_loc}")
+                print("Finding bottom right of inventory...")
+                status, center, self.inv_bottom_right_loc, bottom_right = self.block_on_go_to_image(sct, self.inv_bottom_right_template, False, click=False, move=False, debug=True)
+                print(f"Successfully found bottom right of inventory at {self.inv_bottom_right_loc}")
+                return False
 
     def template_path(self, template_name):
         return os.path.join("images", template_name)
@@ -87,10 +105,10 @@ class Bot:
         time.sleep(default_wait + random.random())
 
     def block_on_go_to_image(self, sct, image, caching, click=True, move=True, threshold=.8, debug=False):
-        ret, pos = self.go_to_image(sct, image, caching, click=click, move=move, threshold=threshold, debug=debug)
-        while not ret:
-            ret, pos = self.go_to_image(sct, image, caching, click=click, move=move, threshold=threshold, debug=debug)
-        return ret, pos
+        status, center, top_left, bottom_right = self.go_to_image(sct, image, caching, click=click, move=move, threshold=threshold, debug=debug)
+        while not status:
+            status, center, top_left, bottom_right = self.go_to_image(sct, image, caching, click=click, move=move, threshold=threshold, debug=debug)
+        return status, center, top_left, bottom_right
 
     def go_to_image(self, sct, image, caching, click=True, move=True, threshold=.8, debug=False):
         if not caching or self.cached_region == None:
@@ -132,6 +150,7 @@ class Bot:
             t_height, t_width = template_gray.shape[:2]
             center_x = max_loc[0] + t_width // 2
             center_y = max_loc[1] + t_height // 2
+            bottom_right = (max_loc[0] + t_width, max_loc[1] + t_height)
             if caching and self.cached_region is not None:
                 # convert to global screenspace
                 center_x += self.cached_region["left"]
@@ -155,11 +174,11 @@ class Bot:
            
             if debug:
                 print(f"good match, max val {max_val} with threshold {threshold}")
-            return True, (center_x, center_y)
+            return True, (center_x, center_y), max_loc, bottom_right
         else:
             if debug:
                 print(f"no good match, max val {max_val} with threshold {threshold}")
-            return False, (0, 0) # no good match
+            return False, (0, 0), (0, 0), (0, 0) # no good match
         
     def log_out(self):
         if self.log_out_button_location is None or self.log_out_location is None:
