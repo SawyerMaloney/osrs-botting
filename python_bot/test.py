@@ -13,10 +13,10 @@ class Test(Bot):
 
     def on_press(self, key):
          if key == keyboard.Key.space:
-            print("using item 1,0")
-            self.use_item(3, 0)
-            self.wait(2)
-            self.use_item(0, 1)
+            print("checking inv slot 1, 0")
+            self.check_inv_slot(1, 0)
+            print("checking inv slot 1, 1")
+            self.check_inv_slot(1, 1)
             return False
     
 bot = Test()

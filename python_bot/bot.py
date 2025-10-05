@@ -45,6 +45,8 @@ class Bot:
         self.open_inventory_tab()
         self.reset_mouse()
 
+        self.inv_pos_count = 0
+
     def calculate_inv_slot_pos(self):
         self.inv_width = self.inv_bottom_right_loc[0] - self.inv_top_left_loc[0]
         self.inv_height = self.inv_bottom_right_loc[1] - self.inv_top_left_loc[1]
@@ -231,4 +233,35 @@ class Bot:
         item_loc = self.inv_positions[h][w]
         # find size of item 
         item_size = (self.inv_width / 4, self.inv_height / 7)
+        # find top left of the position
+        item_top_left = (int(item_loc[0] - item_size[0]/2), int(item_loc[1] - item_size[0]/2))
+        item_bottom_right = (int(item_loc[0] + item_size[0] / 2), int(item_loc[1] + item_size[1] / 2))
+        # now search 
+        region = {'top': item_top_left[0], 'left': item_top_left[1], 'width': int(item_size[0]), 'height': int(item_size[1])}
+        print(f"searching region {region}")
+        with mss.mss() as sct:
+            screen = np.array(sct.grab(sct.monitors[1]))
         
+        # convert to grayscale for edge detection
+        gray = cv2.cvtColor(screen, cv2.COLOR_BGRA2GRAY)
+
+        # crop the item region from the grayscale image to check edges
+        item_crop = gray[item_top_left[1]:item_bottom_right[1], item_top_left[0]:item_bottom_right[0]]
+        edges = cv2.Canny(item_crop, 100, 200)
+        edge_density = np.count_nonzero(edges) / edges.size
+        print(f"Edge density: {edge_density:.4f}")
+
+        # draw a rectangle on the full screen to show the grabbed region
+        screen_bgr = cv2.cvtColor(screen, cv2.COLOR_BGRA2BGR)
+        cv2.rectangle(screen_bgr, item_top_left, item_bottom_right, (0, 0, 255), 2)
+
+        # save the screenshot with highlighted item
+        cv2.imwrite(f"screenshot_with_box_{self.inv_pos_count}.png", screen_bgr)
+        print(f"Saved screenshot with bounding box as screenshot_with_box_{self.inv_pos_count}.png")
+        self.inv_pos_count += 1
+
+        # Decide threshold (tweak as needed)
+        if edge_density < 0.01:
+            print("🟩 Likely blank area")
+        else:
+            print("🟥 Has edges or texture")
