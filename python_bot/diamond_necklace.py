@@ -31,13 +31,13 @@ class RubyMaker:
 
         self.MIN_AREA = 10
 
-        self.gold_template = cv2.imread("gold.png", cv2.IMREAD_UNCHANGED)
+        self.gold_template = cv2.imread(self.template_path("gold.png"), cv2.IMREAD_UNCHANGED)
         self.gold_template = cv2.cvtColor(self.gold_template, cv2.COLOR_BGRA2BGR)
-        self.diamond_template = cv2.imread("ruby.png", cv2.IMREAD_UNCHANGED)
+        self.diamond_template = cv2.imread(self.template_path("ruby.png"), cv2.IMREAD_UNCHANGED)
         self.diamond_template = cv2.cvtColor(self.diamond_template, cv2.COLOR_BGRA2BGR)
-        self.furnace_screen_template = cv2.imread("furnace_screen.png", cv2.IMREAD_UNCHANGED)
+        self.furnace_screen_template = cv2.imread(self.template_path("furnace_screen.png"), cv2.IMREAD_UNCHANGED)
         self.furnace_screen_template = cv2.cvtColor(self.furnace_screen_template, cv2.COLOR_BGRA2BGR)
-        self.bank_icon_template = cv2.imread("bank_icon.png", cv2.IMREAD_UNCHANGED)
+        self.bank_icon_template = cv2.imread(self.template_path("bank_icon.png"), cv2.IMREAD_UNCHANGED)
         self.bank_icon_template = cv2.cvtColor(self.bank_icon_template, cv2.COLOR_BGRA2BGR)
         
     def left_click(self):

@@ -3,8 +3,6 @@ import numpy as np
 import mss
 import time
 from pynput import mouse, keyboard
-import sys
-import json
 import random
 from datetime import datetime
 import os
@@ -14,20 +12,73 @@ class Bot:
         self.mouse_ctrl = mouse.Controller()
         self.keyboard = keyboard.Controller()
 
-        self.log_out_template = cv2.imread("log_out.png", cv2.IMREAD_UNCHANGED)
+        self.log_out_template = cv2.imread(self.template_path("log_out.png"), cv2.IMREAD_UNCHANGED)
         self.log_out_template = cv2.cvtColor(self.log_out_template, cv2.COLOR_BGRA2BGR)
+        self.log_out_location = None
 
-        self.log_out_button_template = cv2.imread("log_out_button.png", cv2.IMREAD_UNCHANGED)
+        self.log_out_button_template = cv2.imread(self.template_path("log_out_button.png"), cv2.IMREAD_UNCHANGED)
         self.log_out_button_template = cv2.cvtColor(self.log_out_button_template, cv2.COLOR_BGRA2BGR)
+        self.log_out_button_location = None
 
-        self.inventory_template = cv2.imread("inventory.png", cv2.IMREAD_UNCHANGED)
+        self.inventory_template = cv2.imread(self.template_path("inventory.png"), cv2.IMREAD_UNCHANGED)
         self.inventory_template = cv2.cvtColor(self.inventory_template, cv2.COLOR_BGRA2BGR)
+        self.inventory_loc = None
 
         self.cached_region = None
         self.debug_counter = 0
 
         self.debug_folder = "debug"
         os.makedirs(self.debug_folder, exist_ok=True)
+
+        print("Need to setup client macro locations. Please setup your window as you will have it while botting, then press space.")
+        with keyboard.Listener(on_press=self.setup_macros) as listener:
+            listener.join()
+
+    def setup_macros(self, key):
+        """
+            Find and save different locations on the screen that won't change.
+        """
+        if key == keyboard.Key.space:
+            with mss.mss() as sct:
+                # inventory location
+                setup_complete = True
+                if self.inventory_loc is None:
+                    print("Finding inventory location...")
+                    status, self.inventory_loc = self.block_on_go_to_image(sct, self.inventory_template, False, click=False, move=False, debug=True)
+                    if status:
+                        print(f"successfully found inventory location at {self.inventory_loc}")
+                    else:
+                        print("Failed to find inventory location")
+                        setup_complete = False
+                if self.log_out_location is None:
+                    print("Finding logout menu location...")
+                    status, self.log_out_location = self.block_on_go_to_image(sct, self.log_out_template, False, click=True, move=True, debug=True)
+                    if status:
+                        print(f"Successfully found logout menu button at {self.log_out_location}.")
+                    else:
+                        setup_complete = False
+                if self.log_out_button_location is None:
+                    print("Finding logout button location...")
+                    status, self.log_out_button_location = self.block_on_go_to_image(sct, self.log_out_button_template, False, click=False, move=False, debug=True)
+                    if status:
+                        print(f"Successfully found logout button at {self.log_out_button_location}")
+                    else:
+                        setup_complete = False
+
+                if setup_complete:
+                    print("Setup complete.")
+                    return False  # opposite, because this will stop the listener
+                else:
+                    print("Setup did not complete. Please press space again when your screen is clear.")
+                    return True
+
+
+        else:
+            print("Bot setup has not completed yet. Please clear your window and press space when you are ready.")
+
+
+    def template_path(self, template_name):
+        return os.path.join("images", template_name)
 
     def left_click(self):
         self.mouse_ctrl.click(mouse.Button.left, 1)
@@ -38,7 +89,13 @@ class Bot:
     def wait(self, default_wait=.5):
         time.sleep(default_wait + random.random())
 
-    def go_to_image(self, sct, image, caching, threshold=.8, debug=False):
+    def block_on_go_to_image(self, sct, image, caching, click=True, move=True, threshold=.8, debug=False):
+        ret, pos = self.go_to_image(sct, image, caching, click=click, move=move, threshold=threshold, debug=debug)
+        while not ret:
+            ret, pos = self.go_to_image(sct, image, caching, click=click, move=move, threshold=threshold, debug=debug)
+        return ret, pos
+
+    def go_to_image(self, sct, image, caching, click=True, move=True, threshold=.8, debug=False):
         if not caching or self.cached_region == None:
             monitor = sct.monitors[0]
             screenshot = np.array(sct.grab(monitor))
@@ -90,40 +147,58 @@ class Bot:
                 "width": t_width
                 }
 
-            print(f"moving to {center_x}, {center_y} and clicking")
-            self.move_mouse((center_x, center_y))
-            self.wait()
-            self.left_click()
-            self.wait
+            if move:
+                print(f"moving to {center_x}, {center_y}...")
+                self.move_mouse((center_x, center_y))
+                self.wait()
+            if click:
+                print("clicking and waiting...")
+                self.left_click()
+                self.wait
            
             if debug:
                 print(f"good match, max val {max_val} with threshold {threshold}")
-            return True
+            return True, (center_x, center_y)
         else:
             if debug:
                 print(f"no good match, max val {max_val} with threshold {threshold}")
-            return False # no good match
+            return False, (0, 0) # no good match
         
     def log_out(self):
-        with mss.mss() as sct:
-            print("Going to logout screen and clicking...")
-            self.go_to_image(sct, self.log_out_template, False, debug=True, threshold=.2)
-            print("waiting...")
-            self.wait()
-            print("Finding log out button and clicking...")
-            img = self.go_to_image(sct, self.log_out_button_template, False, threshold=.5, debug=True)  # bye bye!
-            while not img:
+        if self.log_out_button_location is None or self.log_out_location is None:
+            with mss.mss() as sct:
+                print("Going to logout screen and clicking...")
+                self.go_to_image(sct, self.log_out_template, False, debug=True, threshold=.2)
+                print("waiting...")
+                self.wait()
+                print("Finding log out button and clicking...")
                 img = self.go_to_image(sct, self.log_out_button_template, False, threshold=.5, debug=True)  # bye bye!
-            print("Log out pressed.")
-            return True
+                while not img:
+                    img = self.go_to_image(sct, self.log_out_button_template, False, threshold=.5, debug=True)  # bye bye!
+                print("Log out pressed.")
+                return True
+        else:
+            print("Going to logout menu.")
+            self.move_mouse(self.log_out_location)
+            self.wait()
+            self.left_click()
+            print("Pressing logout")
+            self.move_mouse(self.log_out_button_location)
+            self.wait()
+            self.left_click()
         
     def open_magic_tab(self):
         self.keyboard.press(keyboard.Key.f6)
         self.keyboard.release(keyboard.Key.f6)
         
     def open_inventory_tab(self):
-        with mss.mss() as sct:
-            self.go_to_image(sct, self.inventory_template, False, threshold=.5, debug=True)
+        if self.inventory_loc is None:
+            with mss.mss() as sct:
+                self.go_to_image(sct, self.inventory_template, False, threshold=.5, debug=True)
+        else:
+            self.move_mouse(self.inventory_loc)
+            self.wait()
+            self.left_click()
 
     def reset_mouse(self):
         self.move_mouse((0, 0))

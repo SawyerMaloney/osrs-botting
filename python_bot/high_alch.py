@@ -13,7 +13,7 @@ class HighAlch(Bot):
         self.item_locs = []
         self.magic_tab_loc = (0, 0)
 
-        self.high_alch_template = cv2.imread("high_alch.png", cv2.IMREAD_UNCHANGED)
+        self.high_alch_template = cv2.imread(self.template_path("high_alch.png"), cv2.IMREAD_UNCHANGED)
         self.high_alch_template = cv2.cvtColor(self.high_alch_template, cv2.COLOR_BGRA2BGR)
 
     def on_press(self, key):
