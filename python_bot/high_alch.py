@@ -37,10 +37,12 @@ class HighAlch(Bot):
                         self.block_on_go_to_image(sct, self.high_alch_template, True)
                         self.wait()
                         if not self.has_item(self.item_loc[0], self.item_loc[1], debug=True):
-                            if self.item_loc[1] > 3:
-                                self.item_loc = (self.item_loc[0], self.item_loc[1] + 1)
+                            if self.item_loc[0] < 3:
+                                self.item_loc = (self.item_loc[0] + 1, self.item_loc[1])
                             else:
-                                self.item_loc = (self.item_loc[0] + 1, 0)
+                                print("moving down a row")
+                                self.item_loc = (0, self.item_loc[1] + 1)
+                                print(f"item_loc: {self.item_loc}")
                             if not self.has_item(self.item_loc[0], self.item_loc[1]):
                                 print("Done with high alching.")
                                 return False

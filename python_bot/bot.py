@@ -28,7 +28,7 @@ class Bot:
         self.inv_bottom_right_loc = None
 
         # array of positions for each item. 24 items total, 4 W x 7 H 
-        self.inv_positions = [[None for _ in range(4)] for _ in range(7)]
+        self.inv_positions = [[None for _ in range(7)] for _ in range(4)]
 
         self.cached_region = None
         self.debug_counter = 0
@@ -55,10 +55,10 @@ class Bot:
 
         print(f"inv_top_left[1]: {self.inv_top_left_loc[1]}, offset_y: {self.inv_offset_y}, inv_height: {self.inv_height}")
 
-        for h in range(len(self.inv_positions)):
-            for w in range(len(self.inv_positions[0])):
+        for w in range(len(self.inv_positions)):
+            for h in range(len(self.inv_positions[0])):
                 item_pos = (self.inv_offset_x + w * self.inv_width / 4 + self.inv_top_left_loc[0], self.inv_offset_y + h * self.inv_height / 7 + self.inv_top_left_loc[1])
-                self.inv_positions[h][w] = item_pos
+                self.inv_positions[w][h] = item_pos
 
         print(f"Finished calculating item positions: \n{self.inv_positions}")
 
@@ -222,14 +222,15 @@ class Bot:
 
     def use_item(self, w, h):
         print(f"using item {w}, {h}")
-        print(f"w: {self.inv_positions[h][w][1]}, h: {self.inv_positions[h][w][0]}")
-        self.move_mouse(self.inv_positions[h][w])
+        print(f"w: {self.inv_positions[w][h][1]}, h: {self.inv_positions[w][h][0]}")
+        self.move_mouse(self.inv_positions[w][h])
         self.wait()
         self.left_click()
         self.wait()
 
     def has_item(self, w, h, debug=False):
-        item_loc = self.inv_positions[h][w]
+        print(f"has_item: w: {w}, h: {h}")
+        item_loc = self.inv_positions[w][h]
         # find size of item 
         item_size = (self.inv_width / 4, self.inv_height / 7)
         # find top left of the position
